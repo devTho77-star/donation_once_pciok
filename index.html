@@ -52,7 +52,6 @@
 </head>
 <body>
 <div class="container">
-  <!-- Fixed: use a form instead of div -->
   <form id="payment-form">  
     <div class="header" style="display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
     	<div class="logo" style="display: none;"><i class="fas fa-lock" style="font-size: 36px;"></i></div>
@@ -61,7 +60,6 @@
           <p>Make a single contribution to support our cause</p>
     	</div>
 	</div>
-
 
     <div class="payment-body">
       <div class="section-title"><i class="fas fa-money-bill-wave"></i><span>Payment Amount</span></div>
@@ -119,7 +117,6 @@
       </div>
       <div class="form-group"><label for="card-name">Name on Card</label><input type="text" id="card-name" placeholder="As printed on your card" required></div>
 
-      <!-- Fixed: type="submit" -->
       <button class="pay-button" id="submit-button" type="submit">Pay €25</button>
 
       <div class="secure-notice"><i class="fas fa-lock"></i><span>Your payment is secured with SSL encryption</span></div>
@@ -133,15 +130,11 @@
         </div>
       </div>
     </div>
-
-   
     
     <div class="payment-footer">
       <p>By making a one-time donation, you authorize a single secure payment to support our association. No further charges will occur unless you donate again. </p>
       <p>© 2025 Govinda's. All rights reserved.</p>
     </div>
-    
-    
   </form>
 </div>
 
@@ -231,13 +224,18 @@ form.addEventListener('submit', async (event) => {
 
   try {
     const donationByName = document.getElementById('donation-by').value;
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    
     const response = await fetch('/.netlify/functions/process-payment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         amount: Math.round(amount * 100), // cents
         currency: 'eur',
-        donation_by: donationByName
+        donation_by: donationByName,
+        name: name,
+        email: email
       }),
     });
 
@@ -268,13 +266,8 @@ form.addEventListener('submit', async (event) => {
       payButton.disabled = false;
       payButton.textContent = `Pay €${amount}`;
     } else {
-      alert('Payment successful! Thank you for your donation.' + 
-        (donationByName ? ` Your donation is made in the name of: ${donationByName}` : ''));
-      form.reset();
-      donationOptions.forEach(opt => opt.classList.remove('active'));
-      donationOptions[0].classList.add('active');
-      otherAmountContainer.classList.remove('visible');
-      updateButtonText();
+      // Redirect to success page with payment intent details
+      window.location.href = `success_confirmation.html?payment_intent=${paymentIntent.id}&payment_intent_client_secret=${paymentIntent.client_secret}`;
     }
   } catch (err) {
     console.error('Error:', err);
