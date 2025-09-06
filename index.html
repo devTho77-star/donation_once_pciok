@@ -267,7 +267,7 @@ form.addEventListener('submit', async (event) => {
       payButton.textContent = `Pay €${amount}`;
     } else {
       // Redirect with only PaymentIntent ID (safe)
-            window.location.href = `success_confirmaion.html?payment_intent=${paymentIntent.id}`;
+            window.location.href = `success_confirmation.html?payment_intent=${paymentIntent.id}`;
 
 
     }
@@ -284,3 +284,4 @@ updateButtonText();
 </script>
 </body>
 </html>
+
