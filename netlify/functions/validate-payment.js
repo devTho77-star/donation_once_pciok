@@ -1,62 +1,33 @@
-// /.netlify/functions/validate-payment.js
 const Stripe = require('stripe');
+const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 exports.handler = async (event) => {
-  // Only allow POST requests
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    };
+    return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
-  
+
   try {
-    const { paymentIntentId, clientSecret } = JSON.parse(event.body);
-    
-    // Initialize Stripe with secret key
-    const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-    
-    // Retrieve the payment intent
+    const { paymentIntentId } = JSON.parse(event.body);
+    if (!paymentIntentId) throw new Error('PaymentIntent ID missing');
+
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    
-    // Verify the client secret matches
-    if (paymentIntent.client_secret !== clientSecret) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Invalid client secret' }),
-      };
-    }
-    
-    // Check if payment was successful
+
     if (paymentIntent.status !== 'succeeded') {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: `Payment not successful. Status: ${paymentIntent.status}` }),
-      };
+      return { statusCode: 400, body: JSON.stringify({ error: 'Payment not successful' }) };
     }
-    
-    // Extract relevant data (mask sensitive information)
-    const paymentDetails = {
-      amount: paymentIntent.amount,
-      currency: paymentIntent.currency,
-      paymentIntentId: paymentIntent.id,
-      name: paymentIntent.shipping ? paymentIntent.shipping.name : 'Not provided',
-      email: paymentIntent.receipt_email || 'Not provided',
-      donationBy: paymentIntent.metadata ? paymentIntent.metadata.donation_by : 'Not specified'
-    };
-    
+
     return {
       statusCode: 200,
-      body: JSON.stringify(paymentDetails),
-    };
-  } catch (error) {
-    console.error('Error validating payment:', error);
-    
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ 
-        error: error.message 
+      body: JSON.stringify({
+        amount: paymentIntent.amount,
+        name: paymentIntent.metadata.name || 'N/A',
+        email: paymentIntent.receipt_email || 'N/A',
+        donationBy: paymentIntent.metadata.donation_by || 'N/A',
+        paymentIntentId: paymentIntent.id,
       }),
     };
+  } catch (err) {
+    console.error(err);
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 };
